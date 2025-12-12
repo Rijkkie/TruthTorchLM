@@ -2,6 +2,7 @@ from ..templates import DECOMPOSITION_INSTRUCTION, DECOMPOSITION_INSTRUCTION_GRA
 from .decomposition_method import DecompositionMethod
 from TruthTorchLM.utils.common_utils import fix_tokenizer_chat
 
+from outlines import from_transformers, Generator # change 0
 import outlines
 from typing import Union
 from copy import deepcopy
@@ -27,8 +28,7 @@ class StructuredDecompositionLocal(DecompositionMethod):
         super().__init__()
 
         outlines.disable_cache()
-        outlines_model = outlines.models.Transformers(model, tokenizer)
-        self.generator = outlines.generate.json(outlines_model, Claims)
+        self.generator = Generator(from_transformers(model, tokenizer),output_type=Claims) # change 1
         self.tokenizer = tokenizer
         self.instruction = instruction
         self.instruction_for_granular = instruction_for_granular
@@ -52,8 +52,8 @@ class StructuredDecompositionLocal(DecompositionMethod):
             add_generation_prompt=True,
             continue_final_message=False,
         )
-        resp = self.generator(text, seed=self.seed)
-
+        raw = self.generator(text) # change 2
+        resp = Claims.model_validate_json(raw) # change 3
         return resp.claims
 
     def __call__(self, input_text) -> list[str]:

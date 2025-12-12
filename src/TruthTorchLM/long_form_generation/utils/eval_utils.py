@@ -34,7 +34,6 @@ def run_over_dataset(
     continue_final_message=False,
     **kwargs,
 ):
-    
     if dataset[0]["context"] != "" and user_prompt.find("context") == -1:
         user_prompt = "Context: {context}\n" + user_prompt 
         #show warning
@@ -103,11 +102,11 @@ def run_over_dataset(
             **kwargs,
         )
 
-        print("Checking for claim support by google search...")
+        print(f"Checking for claim support for {len(truth_dict["claims"])} claims by retriever...")
         start_time = time.time()
         results = [claim_evaluator(atomic_fact=claim)
-                   for claim in truth_dict["claims"]]
-        print(f"Time ellapsed for google search: {time.time()-start_time}")
+                   for claim in tqdm(truth_dict["claims"])]
+        print(f"Time ellapsed for retriever search: {time.time()-start_time}")
         output_dict["claim_correctness"].append(
             [
                 -1 if res["answer"] == None else 0 if "Not" in res["answer"] else 1

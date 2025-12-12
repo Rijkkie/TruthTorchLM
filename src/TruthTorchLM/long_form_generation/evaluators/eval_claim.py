@@ -23,6 +23,7 @@ from transformers import PreTrainedModel, PreTrainedTokenizer, PreTrainedTokeniz
 import TruthTorchLM.long_form_generation.utils.safe_utils as utils
 from abc import ABC
 from TruthTorchLM.utils.common_utils import generate, fix_tokenizer_chat
+from sentence_transformers import CrossEncoder
 
 
 SUPPORTED_LABEL = "Supported"
@@ -87,10 +88,12 @@ class ClaimEvaluator(ABC):
         self.max_steps = max_steps
         self.max_retries = max_retries
         self.num_searches = num_searches
+        self.ce = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2',device="cuda")
 
     def __call__(self, atomic_fact: str) -> dict:
         return check_atomic_fact(
             atomic_fact,
+            self.ce,
             self.rater,
             self.tokenizer,
             self.max_steps,
@@ -144,18 +147,22 @@ def _generate(prompt, model, tokenizer, **kwargs):
 
 def call_search(
     search_query: str,
+    ce,
     num_searches: int = 3,
     search_postamble: str = "",  # ex: 'site:https://en.wikipedia.org'
 ) -> str:
     """Call Google Search to get the search result."""
     search_query += f" {search_postamble}" if search_postamble else ""
 
-    serper_searcher = utils.SerperAPI(k=num_searches)
-    return serper_searcher.run(search_query, k=num_searches)
+    serper_searcher = utils.SerperAPI(k=num_searches,ce=ce)
+    result = serper_searcher.run(search_query, k=num_searches)
+    
+    return result
 
 
 def maybe_get_next_search(
     atomic_fact: str,
+    ce,
     past_searches: list[GoogleSearchResult],
     model: Union[PreTrainedModel, str],
     tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
@@ -182,6 +189,7 @@ def maybe_get_next_search(
                 search_query=query,
                 num_searches=num_searches,
                 search_postamble=search_postamble,
+                ce=ce,
             ),
         )
 
@@ -213,6 +221,7 @@ def maybe_get_final_answer(
 
 def check_atomic_fact(
     atomic_fact: str,
+    ce,
     rater: Union[PreTrainedModel, str],
     tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
     max_steps: int = 5,
@@ -230,6 +239,7 @@ def check_atomic_fact(
         while not next_search and num_tries <= max_retries:
             # print(f'Step {i} Search trial #{num_tries}')s
             next_search = maybe_get_next_search(
+                ce=ce,
                 atomic_fact=atomic_fact,
                 past_searches=search_results,
                 model=rater,

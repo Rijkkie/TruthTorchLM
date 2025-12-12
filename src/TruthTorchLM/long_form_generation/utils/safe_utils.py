@@ -22,7 +22,9 @@ import requests
 import os
 import re
 import termcolor
-
+from pyserini.search.lucene import LuceneSearcher
+import polars as pl
+import json
 
 _SERPER_URL = "https://google.serper.dev"
 NO_RESULT_MSG = "No good Google Search result was found"
@@ -103,6 +105,7 @@ class SerperAPI:
 
     def __init__(
         self,
+        ce,
         gl: str = "us",
         hl: str = "en",
         k: int = 1,
@@ -121,20 +124,33 @@ class SerperAPI:
             "images": "images",
             "search": "organic",
         }
+        self.bm25 = LuceneSearcher('/home/rijkk/Documents/Information Retrieval/rag_ue_safe/index/wiki_dump')
+        self.cross_encoder = ce
+
 
     def run(self, query: str, **kwargs: Any) -> str:
         """Run query through GoogleSearch and parse result."""
-        assert self.serper_api_key, "Missing serper_api_key."
-        results = self._google_serper_api_results(
-            query,
-            gl=self.gl,
-            hl=self.hl,
-            num=self.k,
-            tbs=self.tbs,
-            search_type=self.search_type,
-            **kwargs,
-        )
-        return self._parse_results(results)
+        # assert self.serper_api_key, "Missing serper_api_key."
+        # results = self._google_serper_api_results(
+        #     query,
+        #     gl=self.gl,
+        #     hl=self.hl,
+        #     num=self.k,
+        #     tbs=self.tbs,
+        #     search_type=self.search_type,
+        #     **kwargs,
+        # )
+        # return self._parse_results(results)
+          
+        hits = self.bm25.search(query,k=1000)
+
+        docs = [json.loads(hits[i].lucene_document.get('raw'))["contents"] for i in range(len(hits))]
+
+
+        top_k = pl.DataFrame(self.cross_encoder.rank(query,docs,top_k=3,return_documents=True))
+
+        return "- "+"\n- ".join(top_k.get_column('text').to_list())
+            
 
     def _google_serper_api_results(
         self,

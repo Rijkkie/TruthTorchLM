@@ -220,6 +220,7 @@ class MARS(TruthMethod):
         generated_text = tokenizer.decode(tokens, skip_special_tokens=False)
 
         with torch.no_grad():
+            model_output = model_output.to(model.device) # I had an error with cuda model and cpu input
             outputs = model(model_output)
             logits = outputs.logits  # Logits for each token in the input
 
@@ -234,6 +235,7 @@ class MARS(TruthMethod):
             probs = probs.view(-1).tolist()  # convert to list
             probs = np.array(probs)
 
+        
         importance_scores, phrases = self.get_importance_vector_MARS(
             self.mars_model, self.mars_tokenizer, question, generated_text
         )

@@ -257,9 +257,17 @@ class QuestionAnswerGeneration(ClaimCheckMethod):
         failed_tuples = []
         for i, question in enumerate(all_questions):
             q_messages = deepcopy(self.generate_answer_instruction)
-            q_messages[-1]["content"] = q_messages[-1]["content"].format(
-                question=question
-            )
+            if context:
+                q_messages[-1]["content"] = q_messages[-1]["content"].format(
+                    question=question
+                )
+                q_messages[0]["content"] = q_messages[0]["content"].format(
+                    context=context
+                )
+            else:
+                q_messages[-1]["content"] = q_messages[-1]["content"].format(
+                    question=question
+                )
 
             tokenizer, q_messages = fix_tokenizer_chat(tokenizer, q_messages)
             text = tokenizer.apply_chat_template(
