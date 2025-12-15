@@ -101,8 +101,8 @@ def run_over_dataset(
             context=dataset[i]["context"],
             **kwargs,
         )
-
-        print(f"Checking for claim support for {len(truth_dict["claims"])} claims by retriever...")
+        n_claims=len(truth_dict["claims"])
+        print(f"Checking for claim support for {n_claims} claims by retriever...")
         start_time = time.time()
         results = [claim_evaluator(atomic_fact=claim)
                    for claim in tqdm(truth_dict["claims"])]

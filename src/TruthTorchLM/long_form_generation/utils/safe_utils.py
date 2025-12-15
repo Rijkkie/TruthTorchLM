@@ -124,7 +124,7 @@ class SerperAPI:
             "images": "images",
             "search": "organic",
         }
-        self.bm25 = LuceneSearcher('/home/rijkk/Documents/Information Retrieval/rag_ue_safe/index/wiki_dump')
+        self.bm25 = LuceneSearcher('index/wiki_dump')
         self.cross_encoder = ce
 
 
