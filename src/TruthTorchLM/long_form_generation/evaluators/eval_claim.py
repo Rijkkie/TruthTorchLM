@@ -101,7 +101,8 @@ class ClaimEvaluator(ABC):
             self.max_steps,
             self.max_retries,
             self.num_searches,
-            index_path=self.index_path
+            index_path=self.index_path,
+            max_new_tokens=1024
         )
 
     def __str__(self):
