@@ -15,6 +15,8 @@ import warnings
 from tqdm import tqdm
 from typing import Union
 
+import polars as pl
+
 
 def run_over_dataset(
     dataset: list,
@@ -132,7 +134,9 @@ def run_over_dataset(
                 output_dict[f"claim_check_methods_{j}"][
                     "method_specific_details"
                 ].append(truth_dict["claim_check_method_details"][j])
-
+        
+        pl.DataFrame([output_dict]).write_parquet("intermediate_results.parquet")
+        
     return output_dict
 
 

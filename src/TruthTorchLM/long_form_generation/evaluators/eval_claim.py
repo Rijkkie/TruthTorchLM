@@ -82,6 +82,7 @@ class ClaimEvaluator(ABC):
         max_steps: int = 5,
         max_retries: int = 10,
         num_searches: int = 3,
+        index_path : str = "index/wiki_dump",
     ):
         self.rater = rater
         self.tokenizer = tokenizer
@@ -89,6 +90,7 @@ class ClaimEvaluator(ABC):
         self.max_retries = max_retries
         self.num_searches = num_searches
         self.ce = CrossEncoder('cross-encoder/ms-marco-MiniLM-L6-v2',device="cuda")
+        self.index_path = index_path
 
     def __call__(self, atomic_fact: str) -> dict:
         return check_atomic_fact(
@@ -99,6 +101,7 @@ class ClaimEvaluator(ABC):
             self.max_steps,
             self.max_retries,
             self.num_searches,
+            index_path=self.index_path
         )
 
     def __str__(self):
@@ -150,11 +153,12 @@ def call_search(
     ce,
     num_searches: int = 3,
     search_postamble: str = "",  # ex: 'site:https://en.wikipedia.org'
+    index_path="index/wiki_dump",
 ) -> str:
     """Call Google Search to get the search result."""
     search_query += f" {search_postamble}" if search_postamble else ""
 
-    serper_searcher = utils.SerperAPI(k=num_searches,ce=ce)
+    serper_searcher = utils.SerperAPI(k=num_searches,ce=ce,index_path=index_path)
     result = serper_searcher.run(search_query, k=num_searches)
     
     return result
@@ -168,6 +172,7 @@ def maybe_get_next_search(
     tokenizer: Union[PreTrainedTokenizer, PreTrainedTokenizerFast] = None,
     num_searches: int = 3,
     search_postamble: str = "",  # ex: 'site:https://en.wikipedia.org'
+    index_path: str = "index/wiki_dump",
     **kwargs,
 ) -> Union[GoogleSearchResult, None]:
     """Get the next query from the model."""
@@ -190,6 +195,7 @@ def maybe_get_next_search(
                 num_searches=num_searches,
                 search_postamble=search_postamble,
                 ce=ce,
+                index_path=index_path
             ),
         )
 
@@ -228,6 +234,7 @@ def check_atomic_fact(
     max_retries: int = 10,
     num_searches: int = 3,
     search_postamble: str = "",  # ex: 'site:https://en.wikipedia.org'
+    index_path:str ="index/wiki_dump",
     **kwargs,
 ) -> tuple[Union[FinalAnswer, None], dict[str, Any]]:
     """Check if the given atomic fact is supported."""
@@ -246,6 +253,7 @@ def check_atomic_fact(
                 tokenizer=tokenizer,
                 num_searches=num_searches,
                 search_postamble=search_postamble,
+                index_path=index_path,
                 **kwargs,
             )
             num_tries += 1

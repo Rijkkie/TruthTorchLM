@@ -111,6 +111,7 @@ class SerperAPI:
         k: int = 1,
         tbs: Optional[str] = None,
         search_type: Literal["news", "search", "places", "images"] = "search",
+        index_path = "index/wiki_dump"
     ):
         self.serper_api_key = os.environ.get("SERPER_API_KEY", None)
         self.gl = gl
@@ -124,7 +125,7 @@ class SerperAPI:
             "images": "images",
             "search": "organic",
         }
-        self.bm25 = LuceneSearcher('index/wiki_dump')
+        self.bm25 = LuceneSearcher(index_path)
         self.cross_encoder = ce
 
 
