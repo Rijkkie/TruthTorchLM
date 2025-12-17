@@ -52,7 +52,7 @@ class StructuredDecompositionLocal(DecompositionMethod):
             add_generation_prompt=True,
             continue_final_message=False,
         )
-        raw = self.generator(text) # change 2
+        raw = self.generator(text, max_new_tokens=1024) # change 2
         resp = Claims.model_validate_json(raw) # change 3
         return resp.claims
 
